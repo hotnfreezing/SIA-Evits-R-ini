@@ -85,24 +85,17 @@ def create_pdf(client, items, inv_num, supplier, due_date, vatin_client, vat_rat
     pdf = FPDF()
     pdf.add_page()
     
-# Fontu ielāde - Uzlabota un droša versija
     f_name = "Helvetica"
     if os.path.exists("arial.ttf"):
         try:
             pdf.add_font("ArialLV", style="", fname="arial.ttf")
-            f_name = "ArialLV" # Pamata fonts ielādēts
-            
-            # Mēģinām ielādēt Bold, ja nav - nekas, lietosim parasto
+            f_name = "ArialLV"
             if os.path.exists("arialbd.ttf"):
                 pdf.add_font("ArialLV", style="B", fname="arialbd.ttf")
-            
-            # Mēģinām ielādēt Italic, ja nav - nekas, lietosim parasto
             if os.path.exists("ariali.ttf"):
                 pdf.add_font("ArialLV", style="I", fname="ariali.ttf")
             else:
-                # Ja Italic faila nav, pasakām programmai izmantot parasto fontu slīpraksta vietā
                 pdf.add_font("ArialLV", style="I", fname="arial.ttf")
-                
         except:
             f_name = "Helvetica"
 
@@ -113,7 +106,7 @@ def create_pdf(client, items, inv_num, supplier, due_date, vatin_client, vat_rat
             for k, v in repl.items(): txt = str(txt).replace(k, v)
         return str(txt)
 
-    # 1. Galvene
+    # Galvene
     pdf.set_font(f_name, "B", 14)
     pdf.cell(0, 10, t(f"Preču pavadzīme - rēķins Nr. {inv_num}"), ln=True, align='R')
     pdf.set_font(f_name, "", 10)
@@ -123,43 +116,37 @@ def create_pdf(client, items, inv_num, supplier, due_date, vatin_client, vat_rat
     pdf.ln(10)
     y_parties = pdf.get_y()
     
-    # 2. Piegādātājs (Kreisā puse)
-    pdf.set_font(f_name, "B", 10)
-    pdf.text(10, y_parties, t("Piegādātājs:"))
-    pdf.set_xy(10, y_parties + 2)
-    pdf.cell(90, 32, "", border=1) # Rāmītis
+    # Piegādātājs (Bold nosaukums, Reģ. Nr. dalīts)
+    pdf.set_font(f_name, "B", 10); pdf.text(10, y_parties, t("Piegādātājs:"))
+    pdf.set_xy(10, y_parties + 2); pdf.cell(90, 32, "", border=1)
     
     pdf.set_xy(12, y_parties + 4)
-    pdf.set_font(f_name, "B", 10)
-    pdf.cell(86, 5, t(supplier['name']), ln=1) # Bold nosaukums
+    pdf.set_font(f_name, "B", 10); pdf.cell(86, 5, t(supplier['name']), ln=1)
     
-    pdf.set_font(f_name, "", 9)
-    pdf.set_x(12)
-    pdf.cell(86, 5, t(f"Reģ. Nr. {supplier['reg']}"), ln=1, align='R') # Labā mala
+    pdf.set_font(f_name, "", 9); pdf.set_x(12)
+    pdf.cell(40, 5, t("Reģ. Nr."), 0, 0, 'L')
+    pdf.cell(46, 5, t(supplier['reg']), 0, 1, 'R')
     
     pdf.set_x(12)
     p_info = f"PVN: {supplier['vatin']}\nAdrese: {supplier['addr']}\nIBAN: {supplier['iban']}"
     pdf.multi_cell(86, 5, t(p_info), border=0)
 
-    # 3. Saņēmējs (Labā puse)
-    pdf.set_font(f_name, "B", 10)
-    pdf.text(110, y_parties, t("Saņēmējs:"))
-    pdf.set_xy(110, y_parties + 2)
-    pdf.cell(90, 32, "", border=1) # Rāmītis
+    # Saņēmējs (Bold nosaukums, Reģ. Nr. dalīts)
+    pdf.set_font(f_name, "B", 10); pdf.text(110, y_parties, t("Saņēmējs:"))
+    pdf.set_xy(110, y_parties + 2); pdf.cell(90, 32, "", border=1)
     
     pdf.set_xy(112, y_parties + 4)
-    pdf.set_font(f_name, "B", 10)
-    pdf.cell(86, 5, t(client['name']), ln=1) # Bold nosaukums
+    pdf.set_font(f_name, "B", 10); pdf.cell(86, 5, t(client['name']), ln=1)
     
-    pdf.set_font(f_name, "", 9)
-    pdf.set_x(112)
-    pdf.cell(86, 5, t(f"Reģ. Nr. {client['reg']}"), ln=1, align='R') # Labā mala
+    pdf.set_font(f_name, "", 9); pdf.set_x(112)
+    pdf.cell(40, 5, t("Reģ. Nr."), 0, 0, 'L')
+    pdf.cell(46, 5, t(client['reg']), 0, 1, 'R')
     
     pdf.set_x(112)
     c_info = f"PVN: {vatin_client if vatin_client else '-'}\nAdrese: {client['addr']}"
     pdf.multi_cell(86, 5, t(c_info), border=0)
 
-    # 4. Tabula
+    # Tabula un pārējais (bez izmaiņām)
     pdf.set_y(y_parties + 40)
     pdf.set_fill_color(240, 240, 240); pdf.set_font(f_name, "B", 9)
     pdf.cell(10, 8, "Nr.", 1, 0, 'C', True)
@@ -181,7 +168,6 @@ def create_pdf(client, items, inv_num, supplier, due_date, vatin_client, vat_rat
         pdf.cell(25, 8, f"{item['price']:.2f}", 1, 0, 'R')
         pdf.cell(35, 8, f"{line_sum:.2f}", 1, 1, 'R')
 
-    # 5. Aprēķini
     pdf.ln(5)
     rate_val = vat_rate if isinstance(vat_rate, (int, float)) else 0
     vat_sum = total_net * (rate_val / 100)
@@ -200,18 +186,13 @@ def create_pdf(client, items, inv_num, supplier, due_date, vatin_client, vat_rat
     pdf.cell(35, 10, t("KOPĀ:"), 0, 0, 'R')
     pdf.cell(35, 10, f"{grand:.2f} EUR", 1, 1, 'R', fill=True)
     
-    # 6. Summa vārdiem (Italic)
-    pdf.ln(5)
-    pdf.set_font(f_name, "", 9)
+    # Summa vārdiem (Italic)
+    pdf.ln(5); pdf.set_font(f_name, "", 9)
     pdf.write(8, t("Summa vārdiem: "))
-    pdf.set_font(f_name, "I", 9)
-    pdf.write(8, t(format_summa_vardos(grand)))
+    pdf.set_font(f_name, "I", 9); pdf.write(8, t(format_summa_vardos(grand)))
     
-    # 7. Paraksta rinda
-    if pdf.get_y() < 250:
-        pdf.set_y(-30)
-    else:
-        pdf.ln(15)
+    if pdf.get_y() < 250: pdf.set_y(-30)
+    else: pdf.ln(15)
         
     pdf.set_font(f_name, "", 8)
     pdf.cell(0, 10, t("Dokuments sagatavots elektroniski un ir derīgs bez paraksta."), align="C", ln=True)
@@ -311,6 +292,7 @@ if st.button("🚀 Ģenerēt un Lejupielādēt PDF"):
             
 
         st.download_button("📥 Lejupielādēt PDF", data=bytes(pdf_out), file_name=f"Rekins_{final_inv_no}.pdf")
+
 
 
 
