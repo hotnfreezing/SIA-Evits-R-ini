@@ -142,11 +142,12 @@ def create_pdf(client, items, inv_num, supplier, due_date, vatin_client, vat_rat
     pdf.cell(40, 5, t("Reģ. Nr."), 0, 0, 'L')
     pdf.cell(46, 5, t(client['reg']), 0, 1, 'R')
     
+# Saņēmējs (PVN rinda paliek, bet vērtība var būt tukša)
     pdf.set_x(112)
-    c_info = ""
-    if vatin_client: 
-        c_info += f"PVN: {vatin_client}\n"
-    c_info += f"Adrese: {client['addr']}"
+    # Ja vatin_client ir, rādām to, ja nav - rādām tikai "PVN: "
+    pvn_vertiba = vatin_client if vatin_client else ""
+    c_info = f"PVN: {pvn_vertiba}\nAdrese: {client['addr']}"
+    
     pdf.multi_cell(86, 5, t(c_info), border=0)
 
     # Tabula un pārējais (bez izmaiņām)
@@ -295,6 +296,7 @@ if st.button("🚀 Ģenerēt un Lejupielādēt PDF"):
             
 
         st.download_button("📥 Lejupielādēt PDF", data=bytes(pdf_out), file_name=f"Rekins_{final_inv_no}.pdf")
+
 
 
 
