@@ -69,12 +69,25 @@ def create_pdf(client, items, inv_num, supplier, due_date, vatin_client, vat_rat
     pdf = FPDF()
     pdf.add_page()
     
-    f_path = "C:/Windows/Fonts/arial.ttf"
-    if os.path.exists(f_path):
-        pdf.add_font("ArialLV", "", f_path)
-        pdf.add_font("ArialLV", "B", "C:/Windows/Fonts/arialbd.ttf")
-        f_name = "ArialLV"
-    else: f_name = "Helvetica"
+    # Meklējam fontu dažādās vietās (lokāli un uz servera)
+    font_files = ["arial.ttf", "C:/Windows/Fonts/arial.ttf", "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"]
+    font_bold_files = ["arialbd.ttf", "C:/Windows/Fonts/arialbd.ttf", "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"]
+    
+    f_name = "Helvetica" # Noklusējums, ja nekas nesanāk
+    
+    # Mēģinām ielādēt fontu no pieejamajiem failiem
+    for f in font_files:
+        if os.path.exists(f):
+            pdf.add_font("ArialLV", "", f)
+            f_name = "ArialLV"
+            break
+            
+    for fb in font_bold_files:
+        if os.path.exists(fb):
+            pdf.add_font("ArialLV", "B", fb)
+            break
+
+    # ... tālāk seko funkcijas t(txt) un pārējais kods ...
 
     def t(txt):
         if f_name == "Helvetica":
@@ -256,4 +269,5 @@ if st.button("🚀 Ģenerēt un Lejupielādēt PDF"):
         with open("invoice_counter.txt", "w") as f: 
             f.write(str(raw_no))
             
+
         st.download_button("📥 Lejupielādēt PDF", data=bytes(pdf_out), file_name=f"Rekins_{final_inv_no}.pdf")
