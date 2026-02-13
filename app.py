@@ -85,16 +85,24 @@ def create_pdf(client, items, inv_num, supplier, due_date, vatin_client, vat_rat
     pdf = FPDF()
     pdf.add_page()
     
-    # Fontu ielāde (Mēģinām ielādēt Arial saimi)
+# Fontu ielāde - Uzlabota un droša versija
     f_name = "Helvetica"
     if os.path.exists("arial.ttf"):
         try:
             pdf.add_font("ArialLV", style="", fname="arial.ttf")
+            f_name = "ArialLV" # Pamata fonts ielādēts
+            
+            # Mēģinām ielādēt Bold, ja nav - nekas, lietosim parasto
             if os.path.exists("arialbd.ttf"):
                 pdf.add_font("ArialLV", style="B", fname="arialbd.ttf")
+            
+            # Mēģinām ielādēt Italic, ja nav - nekas, lietosim parasto
             if os.path.exists("ariali.ttf"):
                 pdf.add_font("ArialLV", style="I", fname="ariali.ttf")
-            f_name = "ArialLV"
+            else:
+                # Ja Italic faila nav, pasakām programmai izmantot parasto fontu slīpraksta vietā
+                pdf.add_font("ArialLV", style="I", fname="arial.ttf")
+                
         except:
             f_name = "Helvetica"
 
@@ -303,6 +311,7 @@ if st.button("🚀 Ģenerēt un Lejupielādēt PDF"):
             
 
         st.download_button("📥 Lejupielādēt PDF", data=bytes(pdf_out), file_name=f"Rekins_{final_inv_no}.pdf")
+
 
 
 
