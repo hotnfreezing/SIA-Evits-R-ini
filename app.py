@@ -44,11 +44,27 @@ def search_company_sql(query):
     ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) billing_app/1.0'
     rc = RemoteCKAN('https://data.gov.lv/dati/', user_agent=ua)
     rid = "25e80bf3-f107-4ab4-89ef-251b5b9374e9"
-    sql_query = f"""SELECT * from "{rid}" WHERE name ILIKE '%%{query}%%' LIMIT 10"""
+    
+    # Notīrām vaicājumu no liekām pēdiņām, kas var saplēst SQL
+    clean_q = query.replace('"', '').replace("'", "").strip()
+    
     try:
-        result = rc.action.datastore_search_sql(sql=sql_query)
-        return result.get('records', [])
-    except:
+        # 1. Mēģinājums: Vienkāršā meklēšana (visdrošākā pret kļūdām)
+        result = rc.action.datastore_search(resource_id=rid, q=clean_q, limit=15)
+        records = result.get('records', [])
+        
+        # Ja atrada, atgriežam tūlīt
+        if records:
+            return records
+            
+        # 2. Mēģinājums (ja 1. nekas nav): SQL vaicājums nosaukumam un reģ. nr.
+        sql = f"SELECT * FROM \"{rid}\" WHERE name ILIKE '%%{clean_q}%%' OR regcode ILIKE '%%{clean_q}%%' LIMIT 15"
+        result_sql = rc.action.datastore_search_sql(sql=sql)
+        return result_sql.get('records', [])
+        
+    except Exception as e:
+        # Ja kaut kas noiet greizi, mēģinām vismaz atgriezt tukšu sarakstu, nevis kļūdu
+        st.error(f"Meklēšanas kļūda: {e}")
         return []
 
 # --- 3. NUMURĀCIJA ---
@@ -265,4 +281,5 @@ if st.button("🚀 Ģenerēt un Lejupielādēt PDF"):
             
 
         st.download_button("📥 Lejupielādēt PDF", data=bytes(pdf_out), file_name=f"Rekins_{final_inv_no}.pdf")
+
 
