@@ -41,7 +41,7 @@ def format_summa_vardos(n):
     elif centi % 10 == 0 or (centi % 100 >= 11 and centi % 100 <= 19):
         cents_text = "centu"
     
-    res = f"{p} euro"
+    res = f"{p} eiro"
     if centi > 0:
         res += f" un {centi:02d} {cents_text}"
     else:
@@ -306,6 +306,7 @@ if st.button("🚀 Ģenerēt un Lejupielādēt PDF"):
             
 
         st.download_button("📥 Lejupielādēt PDF", data=bytes(pdf_out), file_name=f"Rekins_{final_inv_no}.pdf")
+
 
 
 
