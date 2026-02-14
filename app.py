@@ -6,40 +6,40 @@ import os
 from num2words import num2words
 
 # --- 1. GRAMATIKA (Simt septiņdesmit divi eiro...) ---
+from num2words import num2words # Pārliecinies, ka šī rinda ir koda pašā augšā
+
 def format_summa_vardos(n):
     euro = int(n)
     centi = int(round((n - euro) * 100))
     
-    # Iegūstam pamata tekstu no bibliotēkas
-    p = pynum2word.to_cardinal(euro, 'lv')
-    
+    # Izmantojam pareizo bibliotēkas nosaukumu: num2words
+    try:
+        p = num2words(euro, lang='lv')
+    except Exception:
+        # Drošības spilvens, ja bibliotēka pēkšņi nepieņem 'lv'
+        return f"{n:.2f} EUR"
+
     # 1. LABOJUMS: Tūkstoši (lai nav "tūkstotis", bet ir "viens tūkstotis")
     if p.startswith("tūkstotis"):
         p = "viens " + p
     
     # 2. LABOJUMS: Simti (lai nav "simts", bet ir "viens simts")
-    # Šis labojums nostrādās tikai tad, ja summa ir, piemēram, 173 (simts septiņdesmit trīs)
     if p.startswith("simts"):
         p = "viens " + p
 
-    # 3. LABOJUMS: Iekšējie simti (ja bibliotēka raksta "divi simts", labojam uz "divi simti")
-    p = p.replace("divi simts", "divi simti")
-    p = p.replace("trīs simts", "trīs simti")
-    p = p.replace("četri simts", "četri simti")
-    p = p.replace("pieci simts", "pieci simti")
-    p = p.replace("seši simts", "seši simti")
-    p = p.replace("septiņi simts", "septiņi simti")
-    p = p.replace("astoņi simts", "astoņi simti")
-    p = p.replace("deviņi simts", "deviņi simti")
+    # 3. LABOJUMS: Iekšējie simti (labojam locījumus no "simts" uz "simti")
+    simti_list = ["divi", "trīs", "četri", "pieci", "seši", "septiņi", "astoņi", "deviņi"]
+    for s in simti_list:
+        p = p.replace(f"{s} simts", f"{s} simti")
 
     p = p.capitalize()
     
-    # 4. LABOJUMS: Centu gramatika (1 cents, 21 cents vs 2 centi, 10 centi)
+    # 4. LABOJUMS: Centu gramatika
     cents_text = "centi"
     if centi % 10 == 1 and centi % 100 != 11:
         cents_text = "cents"
     elif centi % 10 == 0 or (centi % 100 >= 11 and centi % 100 <= 19):
-        cents_text = "centu" # Oficiālajā valodā 10, 20 ir "centu", bet ikdienā saka "centi"
+        cents_text = "centu"
     
     res = f"{p} euro"
     if centi > 0:
@@ -306,6 +306,7 @@ if st.button("🚀 Ģenerēt un Lejupielādēt PDF"):
             
 
         st.download_button("📥 Lejupielādēt PDF", data=bytes(pdf_out), file_name=f"Rekins_{final_inv_no}.pdf")
+
 
 
 
