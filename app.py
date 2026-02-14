@@ -6,38 +6,48 @@ import os
 from num2words import num2words
 
 # --- 1. GRAMATIKA (Simt septiņdesmit divi eiro...) ---
-def format_summa_vardos(amount):
-    total_cents = int(round(amount * 100))
-    euros = total_cents // 100
-    cents = total_cents % 100
+def format_summa_vardos(n):
+    euro = int(n)
+    centi = int(round((n - euro) * 100))
     
-    try:
-        # Ģenerējam pamata tekstu
-        text = num2words(euros, lang='lv')
-        
-        # 1. Pārvēršam visu uz mazajiem burtiem ērtākai apstrādei
-        text = text.lower()
-        
-        # 2. Masīva aizstāšana visām variācijām
-        # Svarīgi: aizstājam "viens simts" pirms "simts"
-        text = text.replace("viens simts", "simt")
-        text = text.replace("simts", "simt")
-        text = text.replace("simtu", "simt")
-        
-        # 3. Ja gadījumā teksts sākumā joprojām ir "viens simt", noņemam "viens"
-        if text.startswith("viens simt"):
-            text = text.replace("viens simt", "simt", 1)
-            
-        # 4. Uzliekam lielo sākuma burtu un notīrām liekas atstarpes
-        text = text.strip().capitalize()
-        
-        def loka_centu(n):
-            if n % 10 == 1 and n % 100 != 11: return "cents"
-            return "centi"
+    # Iegūstam pamata tekstu no bibliotēkas
+    p = pynum2word.to_cardinal(euro, 'lv')
+    
+    # 1. LABOJUMS: Tūkstoši (lai nav "tūkstotis", bet ir "viens tūkstotis")
+    if p.startswith("tūkstotis"):
+        p = "viens " + p
+    
+    # 2. LABOJUMS: Simti (lai nav "simts", bet ir "viens simts")
+    # Šis labojums nostrādās tikai tad, ja summa ir, piemēram, 173 (simts septiņdesmit trīs)
+    if p.startswith("simts"):
+        p = "viens " + p
 
-        return f"{text} eiro, {cents:02d} {loka_centu(cents)}"
-    except:
-        return f"{amount:.2f} EUR"
+    # 3. LABOJUMS: Iekšējie simti (ja bibliotēka raksta "divi simts", labojam uz "divi simti")
+    p = p.replace("divi simts", "divi simti")
+    p = p.replace("trīs simts", "trīs simti")
+    p = p.replace("četri simts", "četri simti")
+    p = p.replace("pieci simts", "pieci simti")
+    p = p.replace("seši simts", "seši simti")
+    p = p.replace("septiņi simts", "septiņi simti")
+    p = p.replace("astoņi simts", "astoņi simti")
+    p = p.replace("deviņi simts", "deviņi simti")
+
+    p = p.capitalize()
+    
+    # 4. LABOJUMS: Centu gramatika (1 cents, 21 cents vs 2 centi, 10 centi)
+    cents_text = "centi"
+    if centi % 10 == 1 and centi % 100 != 11:
+        cents_text = "cents"
+    elif centi % 10 == 0 or (centi % 100 >= 11 and centi % 100 <= 19):
+        cents_text = "centu" # Oficiālajā valodā 10, 20 ir "centu", bet ikdienā saka "centi"
+    
+    res = f"{p} euro"
+    if centi > 0:
+        res += f" un {centi:02d} {cents_text}"
+    else:
+        res += " un 00 centu"
+        
+    return res
 # --- 2. MEKLĒŠANA UR DATUBĀZĒ ---
 def search_company_sql(query):
     if len(query) < 3: return []
@@ -296,6 +306,7 @@ if st.button("🚀 Ģenerēt un Lejupielādēt PDF"):
             
 
         st.download_button("📥 Lejupielādēt PDF", data=bytes(pdf_out), file_name=f"Rekins_{final_inv_no}.pdf")
+
 
 
 
