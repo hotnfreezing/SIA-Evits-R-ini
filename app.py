@@ -9,45 +9,40 @@ from num2words import num2words
 from num2words import num2words # Pārliecinies, ka šī rinda ir koda pašā augšā
 
 def format_summa_vardos(n):
+    # SVARĪGI: Noapaļojam pašu summu uzreiz, lai izvairītos no 99.999... kļūdas
+    n = round(n, 2)
     euro = int(n)
     centi = int(round((n - euro) * 100))
     
-    # Izmantojam pareizo bibliotēkas nosaukumu: num2words
+    # Drošības spilvens - ja pēc matemātiskām darbībām centi tomēr sanāk 100
+    if centi == 100:
+        euro += 1
+        centi = 0
+    
     try:
         p = num2words(euro, lang='lv')
-    except Exception:
-        # Drošības spilvens, ja bibliotēka pēkšņi nepieņem 'lv'
-        return f"{n:.2f} EUR"
+    except:
+        return f"{n:.2f} eiro"
 
-    # 1. LABOJUMS: Tūkstoši (lai nav "tūkstotis", bet ir "viens tūkstotis")
-    if p.startswith("tūkstotis"):
-        p = "viens " + p
-    
-    # 2. LABOJUMS: Simti (lai nav "simts", bet ir "viens simts")
-    if p.startswith("simts"):
-        p = "viens " + p
-
-    # 3. LABOJUMS: Iekšējie simti (labojam locījumus no "simts" uz "simti")
+    # Saglabājam visus iepriekšējos gramatikas labojumus
+    if p.startswith("tūkstotis"): p = "viens " + p
+    if p.startswith("simts"): p = "viens " + p
     simti_list = ["divi", "trīs", "četri", "pieci", "seši", "septiņi", "astoņi", "deviņi"]
     for s in simti_list:
         p = p.replace(f"{s} simts", f"{s} simti")
 
     p = p.capitalize()
     
-    # 4. LABOJUMS: Centu gramatika
+    # Centu gramatika
     cents_text = "centi"
     if centi % 10 == 1 and centi % 100 != 11:
         cents_text = "cents"
-    elif centi % 10 == 0 or (centi % 100 >= 11 and centi % 100 <= 19):
+    elif centi % 10 == 0 or (11 <= centi % 100 <= 19):
         cents_text = "centu"
     
-    res = f"{p} eiro"
-    if centi > 0:
-        res += f" un {centi:02d} {cents_text}"
-    else:
-        res += " un 00 centu"
-        
+    res = f"{p} eiro un {centi:02d} {cents_text}"
     return res
+
 # --- 2. MEKLĒŠANA UR DATUBĀZĒ ---
 def search_company_sql(query):
     if len(query) < 3: return []
@@ -142,15 +137,27 @@ def create_pdf(client, items, inv_num, supplier, due_date, vatin_client, vat_rat
     pdf.multi_cell(86, 5, t(p_info), border=0)
 
     # Saņēmējs (Bold nosaukums, Reģ. Nr. dalīts)
-    pdf.set_font(f_name, "B", 10); pdf.text(110, y_parties, t("Saņēmējs:"))
-    pdf.set_xy(110, y_parties + 2); pdf.cell(90, 32, "", border=1)
+    pdf.set_font(f_name, "B", 10)
+    pdf.text(110, y_parties, t("Saņēmējs:"))
+    
+    pdf.set_xy(110, y_parties + 2)
+    pdf.cell(90, 32, "", border=1) # Rāmītis paliek
     
     pdf.set_xy(112, y_parties + 4)
-    pdf.set_font(f_name, "B", 10); pdf.cell(86, 5, t(client['name']), ln=1)
+    pdf.set_font(f_name, "B", 10)
+    # IZMAIŅA: multi_cell ļauj nosaukumam aizņemt vairākas rindas
+    pdf.multi_cell(86, 4.5, t(client['name']), border=0)
     
-    pdf.set_font(f_name, "", 9); pdf.set_x(112)
+    # Lai Reģ. Nr. neuzkāptu virsū nosaukumam, mēs dinamiski turpinām no esošās pozīcijas
+    pdf.set_x(112)
+    pdf.set_font(f_name, "", 9)
     pdf.cell(40, 5, t("Reģ. Nr."), 0, 0, 'L')
     pdf.cell(46, 5, t(client['reg']), 0, 1, 'R')
+    
+    pdf.set_x(112)
+    pvn_val = vatin_client if vatin_client else ""
+    c_info = f"PVN: {pvn_val}\nAdrese: {client['addr']}"
+    pdf.multi_cell(86, 5, t(c_info), border=0)
     
 # Saņēmējs (PVN rinda paliek, bet vērtība var būt tukša)
     pdf.set_x(112)
@@ -306,6 +313,7 @@ if st.button("🚀 Ģenerēt un Lejupielādēt PDF"):
             
 
         st.download_button("📥 Lejupielādēt PDF", data=bytes(pdf_out), file_name=f"Rekins_{final_inv_no}.pdf")
+
 
 
 
